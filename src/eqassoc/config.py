@@ -4,7 +4,7 @@ from datetime import datetime
 from shapely.geometry import LineString
 
 PLANE_EPSG = 26910
-DEFAULT_BATCH = 5_000
+DEFAULT_BATCH = 10_000
 DEFAULT_DB_URI = "mysql+pymysql://root@localhost/earthquakes"
 PACIFIC_TZ = "Canada/Pacific"
 

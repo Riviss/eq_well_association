@@ -18,6 +18,10 @@ eq-assoc --mode incremental --assoc_mode detailed
 eq-assoc --mode incremental --assoc_mode detailed --verbose \
   --reassociate_quake 12345 --reassociate_wa 67890
 
+Earthquakes are streamed from the database in batches (default 10k) so full
+re-runs do not exhaust memory.  The batch size can be adjusted with
+`--batch_size` if needed.
+
 Env:
 
 EQ_DB_URI (default: mysql+pymysql://root@localhost/earthquakes)
