@@ -74,16 +74,17 @@ def load_hf_present_lines():
             }
         )
 
-    gdf = gpd.GeoDataFrame(rows, crs="EPSG:4326").to_crs(epsg=PLANE_EPSG)
-    gdf["prep"] = gdf.geometry.apply(prep)
+    gdf = gpd.GeoDataFrame(rows, crs="EPSG:4326")
     gdf["formation"] = "Other"
-    # NOTE: These 'latitude/longitude' are centroid coords in EPSG:26910 (meters).
-    # They are not used for region decisions in line association; keep parity with original.
+    # Compute centroid coordinates in degrees before projecting for spatial queries
     gdf["latitude"] = gdf.geometry.centroid.y
     gdf["longitude"] = gdf.geometry.centroid.x
     gdf["resolution"] = "present"
-    # Assign region not used downstream for lines but keep parity
+    # Assign regions using degree-based coordinates
     gdf = assign_region(gdf)
+    # Project geometries for spatial queries and prepare them
+    gdf = gdf.to_crs(epsg=PLANE_EPSG)
+    gdf["prep"] = gdf.geometry.apply(prep)
     return gdf
 
 def load_wd():
