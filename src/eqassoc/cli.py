@@ -3,7 +3,7 @@ import argparse, logging, os
 import pandas as pd
 from sqlalchemy import inspect, text
 
-from .config import DEFAULT_BATCH, DEFAULT_DB_URI
+from .config import DEFAULT_BATCH, DEFAULT_DB_URI, DEFAULT_EQ_TABLE
 from .loaders import (
     load_engine,
     iter_earthquakes,
@@ -31,6 +31,12 @@ def main():
     ap.add_argument("--n_jobs", type=int, default=1)  # kept for parity, not used
     ap.add_argument("--mode", choices=["incremental","full"], default="incremental")
     ap.add_argument("--batch_size", type=int, default=DEFAULT_BATCH)
+    ap.add_argument(
+        "--eq_table",
+        choices=["master_origin", "master_origin_3D", "hybrid_catalog"],
+        default=DEFAULT_EQ_TABLE,
+        help="earthquake source table",
+    )
     ap.add_argument("--in_memory", action="store_true")
     ap.add_argument("--verbose", action="store_true", help="turn on DEBUG logging")
     ap.add_argument("--reassociate_quake", type=str, help="quake_id to force re-association for")
@@ -43,7 +49,7 @@ def main():
     eng = load_engine(db_uri)
 
     log.info("Loading source tables …")
-    eq_iter = iter_earthquakes("master_origin_3D", eng, args.batch_size)
+    eq_iter = iter_earthquakes(args.eq_table, eng, args.batch_size)
     tgt = load_target()
     hf_stage = load_hf_stage(tgt)
     hf_present = load_hf_present_lines()

@@ -22,6 +22,9 @@ Earthquakes are streamed from the database in batches (default 10k) so full
 re-runs do not exhaust memory.  The batch size can be adjusted with
 `--batch_size` if needed.
 
+The earthquake source table defaults to `master_origin_3D`. Use `--eq_table`
+to select from `master_origin`, `master_origin_3D`, or `hybrid_catalog`.
+
 Env:
 
 EQ_DB_URI (default: mysql+pymysql://root@localhost/earthquakes)
