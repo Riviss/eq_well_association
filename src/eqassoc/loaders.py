@@ -29,7 +29,6 @@ def load_target():
     return t[["WA", "formation"]].rename(columns={"WA": "well_id"})
 
 def load_hf_stage(target: pd.DataFrame):
-    p = PARAMS
     hf = pd.read_csv(DATAPATH/"extracted"/"hf_latlon.csv",
                      parse_dates=["datetime", "date"],
                      dtype={"wa_num": str, "pad_operation_ID": str})
