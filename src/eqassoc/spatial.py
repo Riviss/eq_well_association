@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 import geopandas as gpd
 from shapely.geometry import Point
+from shapely.ops import nearest_points
 from sklearn.neighbors import BallTree
 from .config import PARAMS, PLANE_EPSG
 from .time_windows import exp_decay, gaussian_distance
@@ -137,7 +138,9 @@ def assoc_lines_batch(
             ln = lines.iloc[idx]
             if not ln.prep.intersects(buf):
                 continue
-            d_m = q.geometry.distance(ln.geometry)
+            # compute shortest distance from the earthquake to the well line
+            pt_eq, pt_ln = nearest_points(q.geometry, ln.geometry)
+            d_m = pt_eq.distance(pt_ln)
             if d_m > buf_m:
                 continue
             t = q.time_local
