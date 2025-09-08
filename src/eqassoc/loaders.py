@@ -23,11 +23,38 @@ def load_engine(db_uri: str):
 
 def load_earthquakes(tbl: str, eng):
     df = pd.read_sql_table(tbl, eng)[["master_id", "lat", "lon", "depth", "datetime"]]
-    df = df.rename(columns={"master_id": "quake_id", "lat": "latitude",
-                            "lon": "longitude", "depth": "depth_km"})
+    df = df.rename(
+        columns={
+            "master_id": "quake_id",
+            "lat": "latitude",
+            "lon": "longitude",
+            "depth": "depth_km",
+        }
+    )
     df["time_local"] = localize_to_pacific(df["datetime"])
     df = df.dropna(subset=["latitude", "longitude", "time_local"]).reset_index(drop=True)
     return df[["quake_id", "latitude", "longitude", "depth_km", "time_local"]]
+
+
+def iter_earthquakes(tbl: str, eng, batch: int):
+    """Yield earthquakes from ``tbl`` in ``batch`` sized chunks.
+
+    This streams events from the database so a full re-run can avoid
+    loading the entire table into memory at once.
+    """
+    query = f"SELECT master_id, lat, lon, depth, datetime FROM {tbl}"
+    for chunk in pd.read_sql_query(query, eng, chunksize=batch):
+        chunk = chunk.rename(
+            columns={
+                "master_id": "quake_id",
+                "lat": "latitude",
+                "lon": "longitude",
+                "depth": "depth_km",
+            }
+        )
+        chunk["time_local"] = localize_to_pacific(chunk["datetime"])
+        chunk = chunk.dropna(subset=["latitude", "longitude", "time_local"]).reset_index(drop=True)
+        yield chunk[["quake_id", "latitude", "longitude", "depth_km", "time_local"]]
 
 def load_target():
     t = pd.read_csv(DATAPATH/"from_corrie"/"target.csv", dtype={"WA": str})
