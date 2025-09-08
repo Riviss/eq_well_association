@@ -1,29 +1,47 @@
 # eqassoc
 
-Resolution-aware earthquake–well association (stage vs present), CRS-safe, with incremental/full modes.
+Resolution-aware earthquake–well association (stage vs present), CRS-safe, with incremental or full refresh modes.
 
-## Install (editable)
+## Installation
+
 ```bash
 pip install -e .
+```
 
-# full refresh
-eq-assoc --mode full --assoc_mode detailed
+## Command-line usage
 
-## Usage
+The package installs an `eq-assoc` command for running the association pipeline.
 
-# incremental update
+### Incremental update (default)
+
+```bash
 eq-assoc --mode incremental --assoc_mode detailed
+```
 
-# verbose, target quake and well
+### Full refresh of association tables
+
+```bash
+eq-assoc --mode full --assoc_mode detailed
+```
+
+### Verbose run targeting a specific quake and well
+
+```bash
 eq-assoc --mode incremental --assoc_mode detailed --verbose \
   --reassociate_quake 12345 --reassociate_wa 67890
+```
 
-Earthquakes are streamed from the database in batches (default 10k) so full
-re-runs do not exhaust memory.  The batch size can be adjusted with
-`--batch_size` if needed.
+### Other useful options
 
-Env:
+- `--batch_size N` – set earthquake batch size (default 10,000)
+- `--in_memory` – process in memory and write results when finished
+- `--reassociate_quake ID` – force re-association for a particular quake
+- `--reassociate_wa ID` – force re-association for a particular well
 
-EQ_DB_URI (default: mysql+pymysql://root@localhost/earthquakes)
+Earthquakes are streamed from the database in batches so full re-runs do not exhaust memory.
 
-data path in code defaults to /home/pgcseiscomp/Documents/bcer_data
+## Environment
+
+- `EQ_DB_URI` – database URI (default `mysql+pymysql://root@localhost/earthquakes`)
+
+The default data path in code is `/home/pgcseiscomp/Documents/bcer_data`.
