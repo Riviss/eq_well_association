@@ -8,7 +8,13 @@ from shapely.prepared import prep
 from sqlalchemy import create_engine
 from .config import PARAMS, PLANE_EPSG, PACIFIC_TZ
 from .regions import assign_region
-from .time_windows import localize_to_pacific, hf_stage_window, wd_window, prod_window
+from .time_windows import (
+    localize_to_pacific,
+    hf_stage_window,
+    hf_present_line_window,
+    wd_window,
+    prod_window,
+)
 
 DATAPATH = Path("/home/pgcseiscomp/Documents/bcer_data")
 
