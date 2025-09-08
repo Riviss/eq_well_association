@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=64", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "eqassoc"
+version = "0.1.0"
+description = "Earthquake–well association (stage vs present), resolution-aware, CRS-safe"
+readme = "README.md"
+requires-python = ">=3.9"
+authors = [{ name = "Ryan Visser" }]
+dependencies = [
+  "pandas>=2.0",
+  "numpy>=1.24",
+  "geopandas>=0.13",
+  "shapely>=2.0",
+  "scikit-learn>=1.2",
+  "SQLAlchemy>=2.0",
+  "pymysql>=1.0",
+  "pyproj>=3.5",
+  "joblib>=1.2"
+]
+
+[project.scripts]
+eq-assoc = "eqassoc.cli:main"
+
