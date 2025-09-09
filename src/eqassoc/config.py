@@ -1,5 +1,5 @@
 from __future__ import annotations
-from dataclasses import dataclass, field
+from dataclasses import dataclass, field, replace
 from datetime import datetime
 from shapely.geometry import LineString
 
@@ -45,4 +45,18 @@ class Params:
     prod_cut: datetime = datetime(2010, 1, 1)
 
 PARAMS = Params()
+
+
+def update_params(**kwargs):
+    """Replace :data:`PARAMS` values based on provided keyword arguments.
+
+    Only keys with non-``None`` values are applied.  This helper allows the
+    CLI to override configuration such as time-window parameters without
+    mutating the frozen :class:`Params` dataclass directly.
+    """
+    global PARAMS
+    update = {k: v for k, v in kwargs.items() if v is not None}
+    if update:
+        PARAMS = replace(PARAMS, **update)
+
 
