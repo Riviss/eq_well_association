@@ -6,10 +6,10 @@ from shapely.geometry import LineString
 from shapely.prepared import prep
 
 from sqlalchemy import create_engine
-from .config import PARAMS, PLANE_EPSG, PACIFIC_TZ
+from .config import PARAMS, PLANE_EPSG
 from .regions import assign_region
 from .time_windows import (
-    localize_to_pacific,
+    utc_to_fort_st_john,
     hf_stage_window,
     hf_present_line_window,
     wd_window,
@@ -31,7 +31,8 @@ def load_earthquakes(tbl: str, eng):
             "depth": "depth_km",
         }
     )
-    df["time_local"] = localize_to_pacific(df["datetime"])
+    # Convert earthquake timestamps (UTC) to Fort St. John time to match well data
+    df["time_local"] = utc_to_fort_st_john(df["datetime"])
     df = df.dropna(subset=["latitude", "longitude", "time_local"]).reset_index(drop=True)
     return df[["quake_id", "latitude", "longitude", "depth_km", "time_local"]]
 
@@ -52,7 +53,8 @@ def iter_earthquakes(tbl: str, eng, batch: int):
                 "depth": "depth_km",
             }
         )
-        chunk["time_local"] = localize_to_pacific(chunk["datetime"])
+        # Convert earthquake timestamps (UTC) to Fort St. John time
+        chunk["time_local"] = utc_to_fort_st_john(chunk["datetime"])
         chunk = chunk.dropna(subset=["latitude", "longitude", "time_local"]).reset_index(drop=True)
         yield chunk[["quake_id", "latitude", "longitude", "depth_km", "time_local"]]
 

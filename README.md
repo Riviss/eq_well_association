@@ -90,3 +90,10 @@ The CLI reads the database connection string from the `EQ_DB_URI` environment va
 
 Data files are expected under `/home/pgcseiscomp/Documents/bcer_data` unless configured otherwise.
 
+## Time zones
+
+Earthquake timestamps are stored in UTC, whereas well activity data
+uses Fort St. John local time (America/Fort_Nelson).  All earthquake
+times are converted to Fort St. John time during loading so that both
+datasets share the same time reference.
+

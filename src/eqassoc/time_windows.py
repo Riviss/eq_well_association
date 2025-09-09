@@ -3,12 +3,15 @@ import math
 import numpy as np
 import pandas as pd
 from pandas import DateOffset
-from .config import PARAMS, PACIFIC_TZ
+from .config import PARAMS, FORT_ST_JOHN_TZ
 
-def localize_to_pacific(ts: pd.Series) -> pd.Series:
-    return (pd.to_datetime(ts, utc=True)
-              .dt.tz_convert(PACIFIC_TZ)
-              .dt.tz_localize(None))
+def utc_to_fort_st_john(ts: pd.Series) -> pd.Series:
+    """Convert UTC timestamps to Fort St. John local time."""
+    return (
+        pd.to_datetime(ts, utc=True)
+          .dt.tz_convert(FORT_ST_JOHN_TZ)
+          .dt.tz_localize(None)
+    )
 
 def exp_decay(dt_days: np.ndarray, tau_days: float) -> np.ndarray:
     """Vectorized exp decay; dt_days >= 0. Uses e^(-dt/tau)."""
