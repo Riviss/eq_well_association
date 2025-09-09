@@ -64,6 +64,25 @@ CLI. For example, to shorten the HF association tail:
 eq-assoc --hf_tmax_days 365
 ```
 
+## Probability determination
+
+The association workflow converts raw distance and time relationships into
+standardized probabilities for each injection type.
+
+1. For every earthquake, candidate links to hydraulic fracturing (HF), water
+   disposal (WD) and production (PROD) activities are scored using
+   distance and time kernels weighted by activity-specific factors.
+2. Scores for all linked stages are normalized so their sum equals one,
+   producing a per-stage probability `P_stage` that can be compared across
+   injection types.
+3. Stage probabilities are summed by well to derive `P_well` and by pad to
+   derive `P_pad`; each set is re-normalized per earthquake to maintain a
+   standard scale.
+4. The highest probability stage, well and pad for each earthquake are
+   identified along with distance, time offset and well counts.
+5. Per-link probabilities are stored in the `eq_well_association` table and
+   the aggregated classification in `eq_well_association_classified`.
+
 ## Environment
 
 The CLI reads the database connection string from the `EQ_DB_URI` environment variable; the default is `mysql+pymysql://root@localhost/earthquakes`.
