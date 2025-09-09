@@ -6,7 +6,9 @@ from shapely.geometry import LineString
 PLANE_EPSG = 26910
 DEFAULT_BATCH = 10_000
 DEFAULT_DB_URI = "mysql+pymysql://root@localhost/earthquakes"
-PACIFIC_TZ = "Canada/Pacific"
+# Fort St. John operates on Mountain Time without daylight savings.
+# Use the corresponding zoneinfo key for conversions.
+FORT_ST_JOHN_TZ = "America/Fort_Nelson"
 
 @dataclass(frozen=True)
 class Params:
