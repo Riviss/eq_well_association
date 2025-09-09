@@ -24,3 +24,9 @@ dependencies = [
 [project.scripts]
 eq-assoc = "eqassoc.cli:main"
 
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-dir]
+"" = "src"
+
