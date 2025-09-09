@@ -3,7 +3,7 @@ import argparse, logging, os
 import pandas as pd
 from sqlalchemy import inspect, text
 
-from .config import DEFAULT_BATCH, DEFAULT_DB_URI, update_params
+from .config import DEFAULT_BATCH, DEFAULT_DB_URI, DEFAULT_EQ_TABLE, update_params
 from .loaders import (
     load_engine,
     iter_earthquakes,
@@ -109,6 +109,11 @@ def main():
         type=int,
         help="Maximum time window after production activity in days",
     )
+    ap.add_argument(
+        "--time_decay_factor",
+        type=float,
+        help="Factor controlling probability decay; probability at Tmax is exp(-factor)",
+    )
     args = ap.parse_args()
 
     _setup_logging(args.verbose)
@@ -121,13 +126,14 @@ def main():
         WD_delay_months=args.wd_delay_months,
         WD_Tmax_days=args.wd_tmax_days,
         PROD_Tmax_days=args.prod_tmax_days,
+        time_decay_factor=args.time_decay_factor,
     )
 
     db_uri = os.getenv("EQ_DB_URI", DEFAULT_DB_URI)
     eng = load_engine(db_uri)
 
     log.info("Loading source tables …")
-    eq_iter = iter_earthquakes("master_origin_3D", eng, args.batch_size)
+    eq_iter = iter_earthquakes(DEFAULT_EQ_TABLE, eng, args.batch_size)
     tgt = load_target()
 
     if "HF" in args.types:
@@ -167,9 +173,11 @@ def main():
             pass
 
     if args.mode == "full" and not args.in_memory:
-        for t in ("eq_well_association", "eq_well_association_classified"):
-            if inspect(eng).has_table(t):
-                eng.execute(text(f"TRUNCATE TABLE {t}"))
+        # SQLAlchemy 2.0: use explicit connection/transaction for DDL
+        with eng.begin() as con:
+            for t in ("eq_well_association", "eq_well_association_classified"):
+                if inspect(eng).has_table(t):
+                    con.exec_driver_sql(f"TRUNCATE TABLE {t}")
     qid = str(args.reassociate_quake) if args.reassociate_quake else None
     processed_any = False
     inmem_assoc, inmem_cls = [], []
@@ -233,4 +241,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

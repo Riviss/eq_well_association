@@ -6,6 +6,8 @@ from shapely.geometry import LineString
 PLANE_EPSG = 26910
 DEFAULT_BATCH = 10_000
 DEFAULT_DB_URI = "mysql+pymysql://root@localhost/earthquakes"
+# Default earthquakes catalogue/table used for association
+DEFAULT_EQ_TABLE = "master_origin"
 # Fort St. John operates on Mountain Time without daylight savings.
 # Use the corresponding zoneinfo key for conversions.
 FORT_ST_JOHN_TZ = "America/Fort_Nelson"
@@ -34,6 +36,8 @@ class Params:
     WD_delay_months: int = 1
     WD_Tmax_days: int = 365
     PROD_Tmax_days: int = 365 * 2  # used as “open window” until now
+    # Probability at Tmax decays by e^(-time_decay_factor)
+    time_decay_factor: float = 2.45
 
     # Weights (same as original)
     weights: dict = field(default_factory=lambda: {
@@ -60,5 +64,4 @@ def update_params(**kwargs):
     update = {k: v for k, v in kwargs.items() if v is not None}
     if update:
         PARAMS = replace(PARAMS, **update)
-
 

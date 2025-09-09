@@ -1,0 +1,46 @@
+Metadata-Version: 2.4
+Name: eqassoc
+Version: 0.1.0
+Summary: Earthquake–well association (stage vs present), resolution-aware, CRS-safe
+Author: Ryan Visser
+Requires-Python: >=3.9
+Description-Content-Type: text/markdown
+Requires-Dist: pandas>=2.0
+Requires-Dist: numpy>=1.24
+Requires-Dist: geopandas>=0.13
+Requires-Dist: shapely>=2.0
+Requires-Dist: scikit-learn>=1.2
+Requires-Dist: SQLAlchemy>=2.0
+Requires-Dist: pymysql>=1.0
+Requires-Dist: pyproj>=3.5
+Requires-Dist: joblib>=1.2
+
+# eqassoc
+
+Resolution-aware earthquake–well association (stage vs present), CRS-safe, with incremental/full modes.
+
+## Install (editable)
+```bash
+pip install -e .
+
+# full refresh
+eq-assoc --mode full --assoc_mode detailed
+
+## Usage
+
+# incremental update
+eq-assoc --mode incremental --assoc_mode detailed
+
+# verbose, target quake and well
+eq-assoc --mode incremental --assoc_mode detailed --verbose \
+  --reassociate_quake 12345 --reassociate_wa 67890
+
+Earthquakes are streamed from the database in batches (default 10k) so full
+re-runs do not exhaust memory.  The batch size can be adjusted with
+`--batch_size` if needed.
+
+Env:
+
+EQ_DB_URI (default: mysql+pymysql://root@localhost/earthquakes)
+
+data path in code defaults to /home/pgcseiscomp/Documents/bcer_data

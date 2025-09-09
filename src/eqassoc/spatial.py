@@ -87,7 +87,15 @@ def assoc_points_batch(
     if mode == "detailed":
         sigma = neigh["region"].map(lambda r: PARAMS.radius_km[typ][r] / 2.45).astype("float32")
         neigh["f_d"] = gaussian_distance(neigh["d_km"].values, sigma.values)
-        tau = PARAMS.HF_Tmax_days / 2.45 if typ == "HF" else (PARAMS.WD_Tmax_days / 2.45 if typ == "WD" else PARAMS.PROD_Tmax_days / 2.45)
+        tau = (
+            PARAMS.HF_Tmax_days / PARAMS.time_decay_factor
+            if typ == "HF"
+            else (
+                PARAMS.WD_Tmax_days / PARAMS.time_decay_factor
+                if typ == "WD"
+                else PARAMS.PROD_Tmax_days / PARAMS.time_decay_factor
+            )
+        )
         neigh["f_t"] = exp_decay(neigh["dt_days"].values, tau)
     else:
         neigh["f_d"] = 1.0
@@ -127,7 +135,7 @@ def assoc_lines_batch(
     ).to_crs(epsg=PLANE_EPSG)
 
     R_map = PARAMS.radius_km["HF"]
-    tau = PARAMS.HF_Tmax_days / 2.45
+    tau = PARAMS.HF_Tmax_days / PARAMS.time_decay_factor
     rec = []
 
     # Iterate quakes with region-based buffer

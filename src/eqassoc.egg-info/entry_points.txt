@@ -1,0 +1,2 @@
+[console_scripts]
+eq-assoc = eqassoc.cli:main

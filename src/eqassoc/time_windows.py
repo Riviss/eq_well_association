@@ -36,12 +36,12 @@ def hf_stage_window(df: pd.DataFrame) -> pd.DataFrame:
     p = PARAMS
     out = df.copy()
     out["inj_base"] = out["datetime"].where(out["datetime"].notna(), out["date"])
+    out["inj_start_local"] = out["inj_base"]
     out["decay_start_local"] = np.where(
         out["datetime"].notna(),
-        out["inj_base"] + DateOffset(hours=p.HF_lag_datetime_hours),
-        out["inj_base"] + DateOffset(days=p.HF_lag_dateonly_days),
+        out["inj_start_local"] + DateOffset(hours=p.HF_lag_datetime_hours),
+        out["inj_start_local"] + DateOffset(days=p.HF_lag_dateonly_days),
     )
-    out["inj_start_local"] = out["decay_start_local"]
     out["inj_end_local"] = out["inj_start_local"] + pd.Timedelta(days=p.HF_Tmax_days)
     return out
 

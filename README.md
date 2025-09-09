@@ -65,6 +65,14 @@ CLI. For example, to shorten the HF association tail:
 eq-assoc --hf_tmax_days 365
 ```
 
+The falloff after an activity's lag is governed by an exponential decay.  The
+`--time_decay_factor` option controls this rate so that the probability at
+`Tmax` is `exp(-factor)`:
+
+```bash
+eq-assoc --time_decay_factor 3.0
+```
+
 ## Probability determination
 
 The association workflow converts raw distance and time relationships into
