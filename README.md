@@ -12,7 +12,8 @@ pip install -e .
 
 ## Command-line usage
 
-The project exposes a console script `eq-assoc`. Common invocations include:
+The project exposes a console script `eq-assoc`. Run `eq-assoc --help` to see
+all available options and their defaults. Common invocations include:
 
 ### Full database refresh
 
