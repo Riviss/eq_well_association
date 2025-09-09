@@ -6,6 +6,7 @@ from shapely.geometry import LineString
 PLANE_EPSG = 26910
 DEFAULT_BATCH = 10_000
 DEFAULT_DB_URI = "mysql+pymysql://root@localhost/earthquakes"
+DEFAULT_EQ_TABLE = "master_origin_3D"
 PACIFIC_TZ = "Canada/Pacific"
 
 @dataclass(frozen=True)
