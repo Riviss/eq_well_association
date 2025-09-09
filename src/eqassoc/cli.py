@@ -26,15 +26,50 @@ def _setup_logging(verbose: bool):
     )
 
 def main():
-    ap = argparse.ArgumentParser()
-    ap.add_argument("--assoc_mode", choices=["simple","detailed"], default="detailed")
-    ap.add_argument("--n_jobs", type=int, default=1)  # kept for parity, not used
-    ap.add_argument("--mode", choices=["incremental","full"], default="incremental")
-    ap.add_argument("--batch_size", type=int, default=DEFAULT_BATCH)
-    ap.add_argument("--in_memory", action="store_true")
-    ap.add_argument("--verbose", action="store_true", help="turn on DEBUG logging")
-    ap.add_argument("--reassociate_quake", type=str, help="quake_id to force re-association for")
-    ap.add_argument("--reassociate_wa", type=str, help="well_id (wa_num) to force re-association for")
+    ap = argparse.ArgumentParser(
+        description="Associate earthquakes with well activity",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter,
+    )
+    ap.add_argument(
+        "--assoc_mode",
+        choices=["simple", "detailed"],
+        default="detailed",
+        help="Level of detail to store for each association",
+    )
+    ap.add_argument(
+        "--n_jobs",
+        type=int,
+        default=1,
+        help="Number of parallel jobs (reserved for compatibility; not used)",
+    )
+    ap.add_argument(
+        "--mode",
+        choices=["incremental", "full"],
+        default="incremental",
+        help="Processing mode: incremental appends new results, full rebuilds tables",
+    )
+    ap.add_argument(
+        "--batch_size",
+        type=int,
+        default=DEFAULT_BATCH,
+        help="Number of earthquakes to process per batch",
+    )
+    ap.add_argument(
+        "--in_memory",
+        action="store_true",
+        help="Keep results in memory and write once after processing",
+    )
+    ap.add_argument("--verbose", action="store_true", help="Turn on DEBUG logging")
+    ap.add_argument(
+        "--reassociate_quake",
+        type=str,
+        help="Quake ID to force re-association for",
+    )
+    ap.add_argument(
+        "--reassociate_wa",
+        type=str,
+        help="Well ID (wa_num) to force re-association for",
+    )
 
     # Injection type and timing overrides
     ap.add_argument(
@@ -44,12 +79,36 @@ def main():
         default=["HF", "WD", "PROD"],
         help="Activity types to include in association",
     )
-    ap.add_argument("--hf_lag_dateonly_days", type=int)
-    ap.add_argument("--hf_lag_datetime_hours", type=int)
-    ap.add_argument("--hf_tmax_days", type=int)
-    ap.add_argument("--wd_delay_months", type=int)
-    ap.add_argument("--wd_tmax_days", type=int)
-    ap.add_argument("--prod_tmax_days", type=int)
+    ap.add_argument(
+        "--hf_lag_dateonly_days",
+        type=int,
+        help="Lag in days for HF events with date-only timestamps",
+    )
+    ap.add_argument(
+        "--hf_lag_datetime_hours",
+        type=int,
+        help="Lag in hours for HF events with full timestamps",
+    )
+    ap.add_argument(
+        "--hf_tmax_days",
+        type=int,
+        help="Maximum time window after HF activity in days",
+    )
+    ap.add_argument(
+        "--wd_delay_months",
+        type=int,
+        help="Delay before WD associations become active, in months",
+    )
+    ap.add_argument(
+        "--wd_tmax_days",
+        type=int,
+        help="Maximum time window after WD activity in days",
+    )
+    ap.add_argument(
+        "--prod_tmax_days",
+        type=int,
+        help="Maximum time window after production activity in days",
+    )
     args = ap.parse_args()
 
     _setup_logging(args.verbose)
