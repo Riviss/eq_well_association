@@ -47,6 +47,23 @@ Earthquakes are streamed from the database in batches (default 10k) so full re-r
 eq-assoc --mode incremental --batch_size 5000 --in_memory
 ```
 
+### Controlling activity types and time windows
+
+By default the association considers hydraulic fracturing (HF), water disposal
+(WD) and production (PROD) activities.  Use `--types` to specify a subset of
+these, e.g. to omit production wells:
+
+```bash
+eq-assoc --mode incremental --types HF WD
+```
+
+Time-window parameters for each activity type can also be overridden from the
+CLI. For example, to shorten the HF association tail:
+
+```bash
+eq-assoc --hf_tmax_days 365
+```
+
 ## Environment
 
 The CLI reads the database connection string from the `EQ_DB_URI` environment variable; the default is `mysql+pymysql://root@localhost/earthquakes`.

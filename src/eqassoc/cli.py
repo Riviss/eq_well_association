@@ -3,7 +3,7 @@ import argparse, logging, os
 import pandas as pd
 from sqlalchemy import inspect, text
 
-from .config import DEFAULT_BATCH, DEFAULT_DB_URI
+from .config import DEFAULT_BATCH, DEFAULT_DB_URI, update_params
 from .loaders import (
     load_engine,
     iter_earthquakes,
@@ -35,9 +35,34 @@ def main():
     ap.add_argument("--verbose", action="store_true", help="turn on DEBUG logging")
     ap.add_argument("--reassociate_quake", type=str, help="quake_id to force re-association for")
     ap.add_argument("--reassociate_wa", type=str, help="well_id (wa_num) to force re-association for")
+
+    # Injection type and timing overrides
+    ap.add_argument(
+        "--types",
+        nargs="+",
+        choices=["HF", "WD", "PROD"],
+        default=["HF", "WD", "PROD"],
+        help="Activity types to include in association",
+    )
+    ap.add_argument("--hf_lag_dateonly_days", type=int)
+    ap.add_argument("--hf_lag_datetime_hours", type=int)
+    ap.add_argument("--hf_tmax_days", type=int)
+    ap.add_argument("--wd_delay_months", type=int)
+    ap.add_argument("--wd_tmax_days", type=int)
+    ap.add_argument("--prod_tmax_days", type=int)
     args = ap.parse_args()
 
     _setup_logging(args.verbose)
+
+    # Allow CLI to override time-window parameters
+    update_params(
+        HF_lag_dateonly_days=args.hf_lag_dateonly_days,
+        HF_lag_datetime_hours=args.hf_lag_datetime_hours,
+        HF_Tmax_days=args.hf_tmax_days,
+        WD_delay_months=args.wd_delay_months,
+        WD_Tmax_days=args.wd_tmax_days,
+        PROD_Tmax_days=args.prod_tmax_days,
+    )
 
     db_uri = os.getenv("EQ_DB_URI", DEFAULT_DB_URI)
     eng = load_engine(db_uri)
@@ -45,33 +70,42 @@ def main():
     log.info("Loading source tables …")
     eq_iter = iter_earthquakes("master_origin_3D", eng, args.batch_size)
     tgt = load_target()
-    hf_stage = load_hf_stage(tgt)
-    hf_present = load_hf_present_lines()
+
+    if "HF" in args.types:
+        hf_stage = load_hf_stage(tgt)
+        hf_present = load_hf_present_lines()
+    else:
+        hf_stage = pd.DataFrame()
+        hf_present = None
 
     # if targeting a specific well for re-assoc: remove from stage so present applies
-    if args.reassociate_wa:
+    if "HF" in args.types and args.reassociate_wa:
         wa = str(args.reassociate_wa)
         hf_stage = hf_stage[hf_stage["well_id"].astype(str) != wa]
         hf_present = hf_present[hf_present["well_id"].astype(str) == wa]
         log.debug("Re-association filter: removed WA %s from stage, kept in present", wa)
 
-    stage_wells = set(hf_stage["well_id"].unique())
+    stage_wells = set(hf_stage["well_id"].unique()) if "HF" in args.types else set()
     # filter present by stage-covered wells (present is only for missing stage)
-    hf_present = hf_present[~hf_present["well_id"].isin(stage_wells)]
+    if "HF" in args.types:
+        hf_present = hf_present[~hf_present["well_id"].isin(stage_wells)]
 
-    affected = purge_obsolete_present(stage_wells, eng)
+    affected = purge_obsolete_present(stage_wells, eng) if "HF" in args.types else set()
 
-    wd = load_wd()
-    prod = load_prod()
+    wd = load_wd() if "WD" in args.types else pd.DataFrame()
+    prod = load_prod() if "PROD" in args.types else pd.DataFrame()
 
     # debug counts
-    try:
-        # cheap re-load for logging parity with original
-        present_all = load_hf_present_lines()
-        log.debug("Counts → stage: %d, present(before): %d, present(kept): %d",
-                  len(hf_stage), len(present_all), len(hf_present))
-    except Exception:
-        pass
+    if "HF" in args.types:
+        try:
+            # cheap re-load for logging parity with original
+            present_all = load_hf_present_lines()
+            log.debug(
+                "Counts → stage: %d, present(before): %d, present(kept): %d",
+                len(hf_stage), len(present_all), len(hf_present)
+            )
+        except Exception:
+            pass
 
     if args.mode == "full" and not args.in_memory:
         for t in ("eq_well_association", "eq_well_association_classified"):
@@ -107,6 +141,7 @@ def main():
             engine=eng,
             target_quake=args.reassociate_quake,
             target_wa=args.reassociate_wa,
+            types=args.types,
         )
         processed_any = True
         if args.in_memory and assoc is not None:

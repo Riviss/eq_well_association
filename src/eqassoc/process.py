@@ -15,37 +15,51 @@ def batch_iter(df: pd.DataFrame, size: int):
     for start in range(0, len(df), size):
         yield df.iloc[start:start+size].copy()
 
-def process_batches(eq_df: pd.DataFrame,
-                    hf: pd.DataFrame,
-                    wd: pd.DataFrame,
-                    prod: pd.DataFrame,
-                    lines_gdf,
-                    mode: str,
-                    batch: int,
-                    in_memory: bool,
-                    engine,
-                    target_quake: int | None = None,
-                    target_wa: str | None = None):
-    trees = {
-        "HF": haversine_tree(hf[["latitude","longitude"]]),
-        "WD": haversine_tree(wd[["latitude","longitude"]]),
-        "PROD": haversine_tree(prod[["latitude","longitude"]]),
-    }
-    srcs = {"HF": hf, "WD": wd, "PROD": prod}
+def process_batches(
+    eq_df: pd.DataFrame,
+    hf: pd.DataFrame,
+    wd: pd.DataFrame,
+    prod: pd.DataFrame,
+    lines_gdf,
+    mode: str,
+    batch: int,
+    in_memory: bool,
+    engine,
+    target_quake: int | None = None,
+    target_wa: str | None = None,
+    types: list[str] | None = None,
+):
+    types = types or ["HF", "WD", "PROD"]
+    trees = {}
+    srcs = {}
+    if "HF" in types and not hf.empty:
+        trees["HF"] = haversine_tree(hf[["latitude", "longitude"]])
+        srcs["HF"] = hf
+    if "WD" in types and not wd.empty:
+        trees["WD"] = haversine_tree(wd[["latitude", "longitude"]])
+        srcs["WD"] = wd
+    if "PROD" in types and not prod.empty:
+        trees["PROD"] = haversine_tree(prod[["latitude", "longitude"]])
+        srcs["PROD"] = prod
 
     all_assoc, all_cls = [], []
     for b, eq_batch in enumerate(batch_iter(eq_df, batch), 1):
         log.info("Batch %d (%d quakes)…", b, len(eq_batch))
         parts = []
-        for t in ("HF","WD","PROD"):
+        for t in types:
+            if t not in srcs:
+                continue
             parts.append(
-                assoc_points_batch(eq_batch, srcs[t], trees[t],
-                                   t, mode, target_quake, target_wa)
+                assoc_points_batch(
+                    eq_batch, srcs[t], trees[t], t, mode, target_quake, target_wa
+                )
             )
-        parts.append(
-            assoc_lines_batch(eq_batch, lines_gdf, mode,
-                              target_quake, target_wa)
-        )
+        if "HF" in types and lines_gdf is not None:
+            parts.append(
+                assoc_lines_batch(
+                    eq_batch, lines_gdf, mode, target_quake, target_wa
+                )
+            )
 
         # normalize columns/order
         for i, df in enumerate(parts):
@@ -55,9 +69,17 @@ def process_batches(eq_df: pd.DataFrame,
         if assoc.empty:
             continue
 
-        counts = assoc["type"].value_counts().reindex(["HF","WD","PROD"], fill_value=0)
-        log.debug("Batch %d counts: HF=%d, WD=%d, PROD=%d, total=%d",
-                  b, counts.get("HF",0), counts.get("WD",0), counts.get("PROD",0), len(assoc))
+        counts = assoc["type"].value_counts().reindex(
+            ["HF", "WD", "PROD"], fill_value=0
+        )
+        log.debug(
+            "Batch %d counts: HF=%d, WD=%d, PROD=%d, total=%d",
+            b,
+            counts.get("HF", 0),
+            counts.get("WD", 0),
+            counts.get("PROD", 0),
+            len(assoc),
+        )
 
         # per-stage probability among all links for a quake
         assoc["P_stage"] = assoc.groupby("quake_id")["score"].transform(lambda x: (x / x.sum()).astype("float32"))
@@ -85,7 +107,13 @@ def process_batches(eq_df: pd.DataFrame,
                        ["quake_id","best_pad","best_pad_prob"]]
 
         # counts
-        cts = assoc.groupby(["quake_id","type"])["well_id"].nunique().unstack(fill_value=0).astype(int)
+        cts = (
+            assoc.groupby(["quake_id", "type"])["well_id"]
+            .nunique()
+            .unstack(fill_value=0)
+            .reindex(["HF", "WD", "PROD"], axis=1, fill_value=0)
+            .astype(int)
+        )
         cts.columns = [f"n_{c.lower()}_wells" for c in cts.columns]
         cts = cts.reset_index()
 
